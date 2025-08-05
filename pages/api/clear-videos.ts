@@ -3,7 +3,7 @@ import path from "path";
 import { existsSync, readdirSync, rmSync, statSync } from "fs";
 import { NextApiRequest, NextApiResponse } from "next";
 
-const videosDir = path.join(process.cwd(), "public/videos");
+const videosDir = path.join(process.cwd(), "public/data");
 
 export default async function handler(
   req: NextApiRequest,

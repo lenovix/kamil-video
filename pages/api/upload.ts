@@ -3,15 +3,12 @@ import fs from "fs/promises";
 import { mkdirSync, existsSync } from "fs";
 import { NextApiRequest, NextApiResponse } from "next";
 
-// Nonaktifkan body parser bawaan Next.js
 export const config = {
-  api: {
-    bodyParser: false,
-  },
+  api: { bodyParser: false },
 };
 
-const videosDir = path.join(process.cwd(), "public/videos");
 const metadataPath = path.join(process.cwd(), "data/video-metadata.json");
+const dataDir = path.join(process.cwd(), "public/data");
 
 export default async function handler(
   req: NextApiRequest,
@@ -19,83 +16,66 @@ export default async function handler(
 ) {
   if (req.method !== "POST") return res.status(405).end("Method Not Allowed");
 
-  // Import formidable secara dinamis
   const formidable = (await import("formidable")).default;
-  const form = formidable({ multiples: false, keepExtensions: true });
+  const form = formidable({ multiples: true, keepExtensions: true });
 
   form.parse(req, async (err, fields, files) => {
+    if (err) return res.status(500).json({ error: err.message });
+
     try {
-      if (err) throw err;
-      if (err) {
-        console.error("Parse error:", err);
-        return res.status(500).json({ error: err.message });
+      const id = Date.now().toString();
+      const basePath = path.join(dataDir, id);
+      mkdirSync(basePath, { recursive: true });
+      mkdirSync(path.join(basePath, "cover"), { recursive: true });
+      mkdirSync(path.join(basePath, "screenshot"), { recursive: true });
+      mkdirSync(path.join(basePath, "video"), { recursive: true });
+
+      // Save cover
+      const cover = Array.isArray(files.cover) ? files.cover[0] : files.cover;
+      const coverName = cover.originalFilename || "cover.jpg";
+      await fs.rename(cover.filepath, path.join(basePath, "cover", coverName));
+
+      // Save screenshots
+      const screenshots = Array.isArray(files.screenshots)
+        ? files.screenshots
+        : [files.screenshots];
+      const screenshotPaths: string[] = [];
+      for (const shot of screenshots) {
+        if (!shot) continue;
+        const name = shot.originalFilename || "screenshot.jpg";
+        const dest = path.join(basePath, "screenshot", name);
+        await fs.rename(shot.filepath, dest);
+        screenshotPaths.push(`data/${id}/screenshot/${name}`);
       }
 
-      const series = Array.isArray(fields.series)
-        ? fields.series[0]?.trim()
-        : fields.series?.trim();
-      const chapterTitle = Array.isArray(fields.chapterTitle)
-        ? fields.chapterTitle[0]?.trim()
-        : fields.chapterTitle?.trim();
-      const file = Array.isArray(files.video) ? files.video[0] : files.video;
+      // Save video
+      const video = Array.isArray(files.video) ? files.video[0] : files.video;
+      const videoName = video.originalFilename || "video.mp4";
+      await fs.rename(video.filepath, path.join(basePath, "video", videoName));
 
-      if (!series || !chapterTitle || !file) {
-        return res.status(400).json({ error: "Data tidak lengkap." });
-      }
-
-      const safeSeries = series.replace(/[^a-zA-Z0-9_-]/g, "_");
-      const seriesFolder = path.join(videosDir, safeSeries);
-      mkdirSync(seriesFolder, { recursive: true });
-
-      const originalName = file.originalFilename || "video.mp4";
-      const targetPath = path.join(seriesFolder, originalName);
-
-      try {
-        await fs.rename(file.filepath, targetPath);
-      } catch (renameErr) {
-        console.error("Rename error:", renameErr);
-        return res.status(500).json({ error: "Gagal memindahkan file." });
-      }
-
-      // Load metadata
-      let metadata: any[] = [];
+      // Read & update metadata
+      let metadata = [];
       if (existsSync(metadataPath)) {
-        try {
-          const jsonData = await fs.readFile(metadataPath, "utf8");
-          metadata = jsonData.trim() ? JSON.parse(jsonData) : [];
-        } catch (err) {
-          console.warn("Metadata corrupt, using empty array.");
-          metadata = [];
-        }
+        const raw = await fs.readFile(metadataPath, "utf-8");
+        metadata = raw.trim() ? JSON.parse(raw) : [];
       }
 
-      // Cari series
-      let seriesData = metadata.find((s) => s.seriesTitle === series);
-      if (!seriesData) {
-        seriesData = {
-          id: Date.now(),
-          seriesTitle: series,
-          chapters: [],
-        };
-        metadata.push(seriesData);
-      }
-
-      // Tambah chapter
-      seriesData.chapters.push({
-        chapterId: Date.now(),
-        title: chapterTitle,
-        filename: path.join("videos", safeSeries, originalName),
+      const entry = {
+        id,
+        ...fields,
+        cover: `data/${id}/cover/${coverName}`,
+        screenshots: screenshotPaths,
+        video: `data/${id}/video/${videoName}`,
         uploadedAt: new Date().toISOString(),
-      });
+      };
 
+      metadata.push(entry);
       await fs.writeFile(metadataPath, JSON.stringify(metadata, null, 2));
 
-      res.status(200).json({ message: "Berhasil upload", metadata });
-    } catch (error) {
-      console.error("Upload Error:", error);
-      if (!res.headersSent) {
-        res.status(500).json({ error: "Internal server error" });
-      }
+      res.status(200).json({ message: "Upload berhasil", id });
+    } catch (e) {
+      console.error(e);
+      res.status(500).json({ error: "Internal Server Error" });
     }
   });
 }
