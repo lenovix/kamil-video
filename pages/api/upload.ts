@@ -17,7 +17,12 @@ export default async function handler(
   if (req.method !== "POST") return res.status(405).end("Method Not Allowed");
 
   const formidable = (await import("formidable")).default;
-  const form = formidable({ multiples: true, keepExtensions: true });
+  const form = formidable({
+    multiples: true,
+    keepExtensions: true,
+    maxFileSize: Infinity, // untuk setiap file
+    maxTotalFileSize: Infinity, // total semua file
+  });
 
   form.parse(req, async (err, fields, files) => {
     if (err) return res.status(500).json({ error: err.message });

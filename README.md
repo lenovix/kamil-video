@@ -1,8 +1,6 @@
-fitur:
-🎯 Search series/episode
+## BUG:
+- ketika user melakukan minimize saat mode fullscreen video, titik kembalinya bukan di video, namun di atas halaman
 
-🗂️ Hapus atau edit video/metadata
-
-🌄 Ambil thumbnail dari video (via FFmpeg)
-
-📁 Mode folder per series
+## fitur:
+- 🎯 Search series/episode
+- 🗂️ Hapus atau edit video/metadata
