@@ -1,20 +1,28 @@
 import { useState } from "react";
 import Header from "@/components/Header";
+import Notification from "@/components/Notification";
 
 export default function SettingsPage() {
   const [loading, setLoading] = useState(false);
+  const [notification, setNotification] = useState<{
+    message: string;
+    type?: "success" | "error";
+  } | null>(null);
 
   const handleClearMetadata = async () => {
     setLoading(true);
     await fetch("/api/clear-metadata", { method: "POST" });
-    alert("Metadata berhasil dihapus.");
+    setNotification({ message: "Metadata berhasil dihapus", type: "success" });
     setLoading(false);
   };
 
   const handleClearVideos = async () => {
     setLoading(true);
     await fetch("/api/clear-videos", { method: "POST" });
-    alert("Semua video berhasil dihapus.");
+    setNotification({
+      message: "Semua video berhasil dihapus",
+      type: "success",
+    });
     setLoading(false);
   };
 
@@ -23,6 +31,13 @@ export default function SettingsPage() {
       <Header />
       <div className="max-w-xl mx-auto py-10 px-4 space-y-4">
         <h1 className="text-2xl font-bold mb-4">⚙️ Settings</h1>
+        {notification && (
+          <Notification
+            message={notification.message}
+            type={notification.type}
+            onClose={() => setNotification(null)}
+          />
+        )}
         <button
           onClick={handleClearMetadata}
           disabled={loading}
