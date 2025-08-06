@@ -10,6 +10,9 @@ export const config = {
 const metadataPath = path.join(process.cwd(), "data/video-metadata.json");
 const dataDir = path.join(process.cwd(), "public/data");
 
+// Daftar field yang harus diproses sebagai array (dipisah koma)
+const arrayFields = ["director", "maker", "label", "genre", "cast"];
+
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
@@ -20,15 +23,22 @@ export default async function handler(
   const form = formidable({
     multiples: true,
     keepExtensions: true,
-    maxFileSize: Infinity, // untuk setiap file
-    maxTotalFileSize: Infinity, // total semua file
+    maxFileSize: Infinity,
+    maxTotalFileSize: Infinity,
   });
 
   form.parse(req, async (err, fields, files) => {
     if (err) return res.status(500).json({ error: err.message });
 
     try {
-      const id = Date.now().toString();
+      // Baca metadata lama untuk menentukan ID baru
+      let metadata = [];
+      if (existsSync(metadataPath)) {
+        const raw = await fs.readFile(metadataPath, "utf-8");
+        metadata = raw.trim() ? JSON.parse(raw) : [];
+      }
+
+      const id = (metadata.length + 1).toString();
       const basePath = path.join(dataDir, id);
       mkdirSync(basePath, { recursive: true });
       mkdirSync(path.join(basePath, "cover"), { recursive: true });
@@ -58,16 +68,23 @@ export default async function handler(
       const videoName = video.originalFilename || "video.mp4";
       await fs.rename(video.filepath, path.join(basePath, "video", videoName));
 
-      // Read & update metadata
-      let metadata = [];
-      if (existsSync(metadataPath)) {
-        const raw = await fs.readFile(metadataPath, "utf-8");
-        metadata = raw.trim() ? JSON.parse(raw) : [];
+      // Normalisasi fields
+      const normalizedFields: Record<string, string | string[]> = {};
+      for (const [key, value] of Object.entries(fields)) {
+        const val = Array.isArray(value) ? value[0] : value;
+        if (arrayFields.includes(key)) {
+          normalizedFields[key] = val
+            .split(",")
+            .map((s) => s.trim())
+            .filter(Boolean);
+        } else {
+          normalizedFields[key] = val;
+        }
       }
 
       const entry = {
         id,
-        ...fields,
+        ...normalizedFields,
         cover: `data/${id}/cover/${coverName}`,
         screenshots: screenshotPaths,
         video: `data/${id}/video/${videoName}`,

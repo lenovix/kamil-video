@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useRouter } from "next/router";
 import Header from "@/components/Header";
 import Notification from "@/components/Notification";
 
@@ -23,6 +24,7 @@ export default function Upload() {
     message: string;
     type?: "success" | "error";
   } | null>(null);
+  const router = useRouter();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -60,6 +62,7 @@ export default function Upload() {
       if (xhr.status === 200) {
         setNotification({ message: "Upload berhasil!", type: "success" });
         setUploadProgress(0); // reset
+        router.push(`/`); 
       } else {
         setNotification({ message: "Upload gagal.", type: "error" });
       }
@@ -81,9 +84,6 @@ export default function Upload() {
     <>
       <Header />
       <div className="max-w-4xl mx-auto py-10 px-4">
-        <h1 className="text-3xl font-bold mb-6 text-center">
-          🎬 Upload Video Koleksi
-        </h1>
 
         {notification && (
           <Notification

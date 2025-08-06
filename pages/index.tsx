@@ -30,9 +30,6 @@ export default function Home({ videos }: HomeProps) {
     <>
       <Header />
       <div className="max-w-6xl mx-auto py-10 px-4">
-        <h1 className="text-3xl font-bold mb-8 text-center">
-          🎥 Koleksi Video
-        </h1>
 
         {videos.length === 0 ? (
           <p className="text-center text-gray-500">

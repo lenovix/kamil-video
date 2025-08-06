@@ -127,7 +127,7 @@ export default function CustomVideoPlayer({ src, poster }: Props) {
         ref={videoRef}
         src={src}
         poster={poster}
-        className="w-full h-full"
+        className="w-full"
         onClick={togglePlay}
         onPlay={() => setIsPlaying(true)}
         onPause={() => setIsPlaying(false)}
