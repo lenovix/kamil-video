@@ -110,6 +110,7 @@ export default function Upload() {
               { name: "genre", label: "Genre" },
               { name: "cast", label: "Pemeran" },
               { name: "series", label: "Nama Series" },
+              { name: "source", label: "Source" },
             ].map((field) => (
               <div key={field.name}>
                 <label className="block text-sm font-medium mb-1">

@@ -26,6 +26,16 @@ export default function SettingsPage() {
     setLoading(false);
   };
 
+  const handleClearDirectors = async () => {
+    setLoading(true);
+    await fetch("/api/clear-directors", { method: "POST" });
+    setNotification({
+      message: "Semua Directors berhasil dihapus",
+      type: "success",
+    });
+    setLoading(false);
+  };
+
   return (
     <>
       <Header />
@@ -51,6 +61,13 @@ export default function SettingsPage() {
           className="w-full bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded"
         >
           Hapus Semua Video
+        </button>
+        <button
+          onClick={handleClearDirectors}
+          disabled={loading}
+          className="w-full bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded"
+        >
+          Hapus Data Directors
         </button>
       </div>
     </>

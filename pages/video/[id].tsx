@@ -3,6 +3,8 @@ import path from "path";
 import { GetStaticPaths, GetStaticProps } from "next";
 import Header from "@/components/Header";
 import CustomVideoPlayer from "@/components/CustomVideoPlayer";
+import Zoom from "react-medium-image-zoom";
+import "react-medium-image-zoom/dist/styles.css";
 
 interface VideoMetadata {
   id: string;
@@ -15,6 +17,7 @@ interface VideoMetadata {
   label?: string;
   genre?: string;
   cast?: string;
+  source?: string;
   cover?: string;
   screenshots?: string[];
   video: string;
@@ -38,8 +41,21 @@ export default function VideoDetail({ video, comments }: VideoDetailProps) {
       <Header />
       <div className="max-w-6xl mx-auto py-10 px-4 space-y-8">
         {/* Judul dan Series */}
-        <div>
-          <h1 className="text-3xl font-bold">{video.title}</h1>
+        <div className="space-y-2">
+          <h1 className="text-3xl font-bold flex items-center gap-3">
+            {/* Box untuk Code ID */}
+            <span className="bg-blue-600 text-white text-lg px-3 py-1 rounded-md shadow">
+              {video.codeId || "-"}
+            </span>
+
+            {/* Judul Video */}
+            <span>{video.title}</span>
+          </h1>
+
+          {/* Uploaded At */}
+          <p className="text-sm text-gray-500">
+            Diunggah pada {new Date(video.uploadedAt).toLocaleString("id-ID")}
+          </p>
         </div>
 
         {/* Cover + Metadata */}
@@ -60,7 +76,7 @@ export default function VideoDetail({ video, comments }: VideoDetailProps) {
           </div>
 
           {/* Metadata */}
-          <div className=" rounded shadow p-4 grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+          <div className="rounded shadow p-4 space-y-2 text-sm">
             <div>
               <span className="font-semibold">Code ID:</span>{" "}
               {video.codeId || "-"}
@@ -89,24 +105,25 @@ export default function VideoDetail({ video, comments }: VideoDetailProps) {
               <span className="font-semibold">Series:</span>{" "}
               {video.series || "-"}
             </div>
-            <div className="col-span-2 text-gray-500 text-xs mt-2">
-              Uploaded: {new Date(video.uploadedAt).toLocaleString()}
+            <div>
+              <span className="font-semibold">Source:</span>{" "}
+              {video.source || "-"}
             </div>
           </div>
         </div>
 
-        {/* Screenshot / Gallery */}
         {video.screenshots && video.screenshots.length > 0 && (
           <div>
             <h2 className="text-xl font-semibold mb-3">📸 Gallery</h2>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
               {video.screenshots.map((s, i) => (
-                <img
-                  key={i}
-                  src={`/${s}`}
-                  alt={`Screenshot ${i + 1}`}
-                  className="rounded shadow-sm"
-                />
+                <Zoom key={i}>
+                  <img
+                    src={`/${s}`}
+                    alt={`Screenshot ${i + 1}`}
+                    className="rounded shadow-sm cursor-pointer"
+                  />
+                </Zoom>
               ))}
             </div>
           </div>
